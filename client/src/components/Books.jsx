@@ -8,13 +8,14 @@ import {
   Tr,
   Th,
   Td,
-  Text,
   Button,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 
 const Books = () => {
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [showOldBooks, setShowOldBooks] = useState(false);
 
   useEffect(() => {
     fetch("https://bookbackend-45nr.onrender.com/books/", {
@@ -26,6 +27,7 @@ const Books = () => {
       .then((res) => res.json())
       .then((data) => {
         setData(data);
+        setFilteredData(data);
       })
       .catch((err) => console.log(err));
   }, []);
@@ -33,7 +35,6 @@ const Books = () => {
   const userRole = localStorage.getItem("role"); // Replace this with actual user role from your authentication system
 
   const handleDelete = (bookId) => {
-    // Implement your delete logic here
     fetch(`https://bookbackend-45nr.onrender.com/books/${bookId}`, {
       method: "DELETE",
       headers: {
@@ -51,9 +52,33 @@ const Books = () => {
     console.log(`Deleting book with ID: ${bookId}`);
   };
 
+  const handleFilterOld = () => {
+    const currentTime = new Date();
+    const tenMinutesAgo = new Date(currentTime - 10 * 60 * 1000);
+
+    const oldBooks = data.filter((book) => {
+      const bookCreatedAt = new Date(book.createdAt);
+      return bookCreatedAt <= tenMinutesAgo;
+    });
+
+    setFilteredData(oldBooks);
+    setShowOldBooks(true);
+  };
+
+  const handleFilterNew = () => {
+    setFilteredData(data);
+    setShowOldBooks(false);
+  };
+
   return (
     <Box p={4} maxW="md" mx="auto">
       <Heading mb={4}>Book List</Heading>
+      <Button colorScheme="blue" onClick={handleFilterOld} mr={2}>
+        Old
+      </Button>
+      <Button colorScheme="blue" onClick={handleFilterNew}>
+        New
+      </Button>
       <Table variant="simple">
         <Thead>
           <Tr>
@@ -64,7 +89,7 @@ const Books = () => {
           </Tr>
         </Thead>
         <Tbody>
-          {data.map((book) => (
+          {filteredData.map((book) => (
             <Tr key={book._id}>
               <Td>{book.title}</Td>
               <Td>{book.author}</Td>
